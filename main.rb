@@ -62,8 +62,8 @@ class Character
 
     #inventory
     @inventory = {}
-    @inventory[:guns]      = []
-    # list of gun hashes {:Weapon => "" :Shots => , :RoF => , :Range => , :Damage => ""}
+    @inventory[:guns]      = [{}]
+    # list of gun hashes {:Weapon => "", :Shots => , :RoF => '', :Range => '', :Damage => ""}
     @inventory[:melee]     = [{:Weapon => "Fist", :Defense => '--', :Speed => 1, :Damage => ""}]
     # list of melee weapon hashes{:Weapon => "", :Defense => '', :Speed => , :Damage => ""}
     @inventory[:ammo]      = [0,0,0]
@@ -71,17 +71,17 @@ class Character
 
     #character notes
     @notes = {}
-    @notes[:notes]      = ''
-    @notes[:nightmare]  = ''
-    @notes[:edges]      = ''
-    @notes[:hindrences] = ''
+    @notes[:notes]      = []
+    @notes[:nightmare]  = []
+    @notes[:edges]      = []
+    @notes[:hindrences] = []
   end
   
   def save_character
     #writing the xml file contents:
     @output_file = ''
-    @builder = Nokogiri::XML::Builder.new(:encoding => 'UTF-8') do |xml|
-      xml.Char {
+    builder = Nokogiri::XML::Builder.new(:encoding => 'UTF-8') do |xml|
+      xml.Char do
         xml.characterName @character_name
         # traits
         xml.Traits{
@@ -129,9 +129,21 @@ class Character
         xml.Inventory do
           @inventory.each do |inv_key, value|
             xml.Inv do
-              xml.name inv_key
+              xml.Inv_Type inv_key
               value.each do |inner_value|
-                xml.value inner_value
+                xml.Item do
+                  if inner_value.is_a?(Hash)
+                    inner_value.each do |inner_inner_key, inner_inner_value|
+                      xml.Group do
+                        xml.name inner_inner_key
+                        xml.value inner_inner_value
+                      end
+                    end
+
+                  else
+                    xml.value inner_value
+                  end
+                end
               end
             end
           end
@@ -139,19 +151,25 @@ class Character
         # notes
         xml.Notes do
           @notes.each{ |note_key, value|
-            xml.Note{xml.name note_key; xml.contents value}
+            xml.Note do xml.name note_key
+              xml.List do
+                value.each do |inner_value|
+                  xml.contents inner_value
+                end
+              end
+            end
           }
         end
-      }
+      end
     end
-    @output_file = @builder.doc.to_xml
+    output_file = builder.doc.to_xml
     # now that the contents are made, write the file itself to ./characters
-    @file_name = "#{@character_name}.xml"
-    @file_name.sub!(" ", "-")
+    file_name = "#{@character_name}.xml"
+    file_name.sub!(" ", "-")
     begin
     Dir.chdir("./characters") do
-      File.open("#{@file_name}", "w+") do |file|
-        file.write("#{@output_file}")
+      File.open("#{file_name}", "w+") do |file|
+        file.write("#{output_file}")
       end
     end
     rescue
@@ -173,88 +191,128 @@ class Character
           @character = document.root
         end
       end
-      
-      puts "WARNING: clearing character known as #{@character_name}"
-      @character_name = @character.at_xpath("characterName").children.text
-      
-      #recursing through all the traits in the character
-
-      puts "\n--- TRAITS ---" 
-      character_trait = @character.at_xpath("Traits")
-      trait_list = character_trait.xpath("Trait")
-      trait_list.each do |trait|
-        trait_name = trait.at_xpath('name').text
-        die_size = trait.at_xpath('die_size').text.to_i
-        num_of_dice = trait.at_xpath('num_of_dice').text.to_i
-        atb_list = []
-        trait.xpath('Attribute').each do |atb|
-        puts "#{atb.at_xpath('name').text}, #{atb.at_xpath('value').text}"
-          atb_list << [atb.at_xpath('name').text, atb.at_xpath('value').text.to_i]
-        end
-        @traits[trait_name.to_sym] = Trait.new(num_of_dice, die_size, atb_list)
-      end
-      
-      puts "\n--- WOUNDS ---"
-      character_wounds = @character.at_xpath("Wounds")
-      wound_list = character_wounds.xpath("Wound")
-      wound_list.each do |wound|
-        puts "#{wound.at_xpath('name').text}, #{wound.at_xpath('value').text}"
-        location = wound.at_xpath('name').text
-        val = wound.at_xpath('value').text.to_i
-        @wounds[location.to_sym] = val
-      end
-
-      puts "\n--- STATS ---"
-      character_stats = @character.xpath("Stats")
-      stat_list = character_stats.xpath("Stat")
-      stat_list.each do |stat|
-        puts "#{stat.at_xpath('name').text}, #{stat.at_xpath('value').text}"
-        name = stat.at_xpath('name').text
-        val = stat.at_xpath('value').text.to_i
-        @stats[name.to_sym] = val
-      end
-
-      puts "\n--- CHIPS ---"
-      character_chips = @character.xpath("Chips")
-      chip_list = character_chips.xpath("Chip")
-      chip_list.each do |chip|
-        puts "#{chip.at_xpath('name').text}, #{chip.at_xpath('value').text}"
-        name = chip.at_xpath('name').text
-        val = chip.at_xpath('value').text.to_i
-        @chips[name.to_sym] = val
-      end
-
-      puts "\n--- ARCANE ---"
-      character_arcane = @character.xpath("Arcane")
-      puts "   --- ARCANE STATS ---"
-
-      arcane_stats = character_arcane.xpath("Ritual_Info")
-      ritual = arcane_stats.xpath("Rit")
-      ritual.each do |stat|
-        puts "   #{stat.at_xpath('stat').text}, #{stat.at_xpath('value').text}"
-        name = stat.at_xpath('stat').text
-        val = stat.at_xpath('value').text
-        @arcane_stats[name.to_sym] = val
-      end
-
-      puts "   --- ARCANE SPELLS ---"
-      @arcane = []
-      arcane_spells = character_arcane.xpath("Spell_Info")
-      spells = arcane_spells.xpath("Spell_Block")
-      spells.each do |spell|
-        spell_stats = {}
-        stats = spell.xpath("Stat")
-        stats.each do |stat|
-          puts "   #{stat.at_xpath('name').text}, #{stat.at_xpath('value').text}"
-          name = stat.at_xpath('name').text
-          val = stat.at_xpath('value').text
-          spell_stats[name.to_sym] = val
-        end
-        @arcane.push(spell_stats)
-      end
+            
     rescue
       puts "ERROR: could not load character"
+      return 0
     end
+      
+    puts "WARNING: clearing character known as #{@character_name}"
+    @character_name = @character.at_xpath("characterName").children.text
+    
+    #recursing through all the traits in the character
+
+    puts "\n--- TRAITS ---" 
+    character_trait = @character.at_xpath("Traits")
+    trait_list = character_trait.xpath("Trait")
+    trait_list.each do |trait|
+      trait_name = trait.at_xpath('name').text
+      die_size = trait.at_xpath('die_size').text.to_i
+      num_of_dice = trait.at_xpath('num_of_dice').text.to_i
+      atb_list = []
+      trait.xpath('Attribute').each do |atb|
+        puts "#{atb.at_xpath('name').text}, #{atb.at_xpath('value').text}"
+        atb_list << [atb.at_xpath('name').text, atb.at_xpath('value').text.to_i]
+      end
+      @traits[trait_name.to_sym] = Trait.new(num_of_dice, die_size, atb_list)
+    end
+    
+    puts "\n--- WOUNDS ---"
+    character_wounds = @character.at_xpath("Wounds")
+    wound_list = character_wounds.xpath("Wound")
+    wound_list.each do |wound|
+      puts "#{wound.at_xpath('name').text}, #{wound.at_xpath('value').text}"
+      location = wound.at_xpath('name').text
+      val = wound.at_xpath('value').text.to_i
+      @wounds[location.to_sym] = val
+    end
+
+    puts "\n--- STATS ---"
+    character_stats = @character.xpath("Stats")
+    stat_list = character_stats.xpath("Stat")
+    stat_list.each do |stat|
+      puts "#{stat.at_xpath('name').text}, #{stat.at_xpath('value').text}"
+      name = stat.at_xpath('name').text
+      val = stat.at_xpath('value').text.to_i
+      @stats[name.to_sym] = val
+    end
+
+    puts "\n--- CHIPS ---"
+    character_chips = @character.xpath("Chips")
+    chip_list = character_chips.xpath("Chip")
+    chip_list.each do |chip|
+      puts "#{chip.at_xpath('name').text}, #{chip.at_xpath('value').text}"
+      name = chip.at_xpath('name').text
+      val = chip.at_xpath('value').text.to_i
+      @chips[name.to_sym] = val
+    end
+
+    puts "\n--- ARCANE ---"
+    character_arcane = @character.xpath("Arcane")
+    puts "   --- ARCANE STATS ---"
+
+    arcane_stats = character_arcane.xpath("Ritual_Info")
+    ritual = arcane_stats.xpath("Rit")
+    ritual.each do |stat|
+      puts "       #{stat.at_xpath('stat').text}, #{stat.at_xpath('value').text}"
+      name = stat.at_xpath('stat').text
+      val = stat.at_xpath('value').text
+      @arcane_stats[name.to_sym] = val
+    end
+
+    puts "   --- ARCANE SPELLS ---"
+    @arcane = []
+    arcane_spells = character_arcane.xpath("Spell_Info")
+    spells = arcane_spells.xpath("Spell_Block")
+    spells.each do |spell|
+      spell_stats = {}
+      stats = spell.xpath("Stat")
+      stats.each do |stat|
+        puts "       #{stat.at_xpath('name').text}, #{stat.at_xpath('value').text}"
+        name = stat.at_xpath('name').text
+        val = stat.at_xpath('value').text
+        spell_stats[name.to_sym] = val
+      end
+      @arcane.push(spell_stats)
+    end
+
+
+    puts "\n--- INVENTORY ---"
+    character_inventory = @character.xpath("Inventory")
+    character_inv_type = character_inventory.xpath("Inv")
+    character_inv_type.each do |type|
+      type_name = type.at_xpath("Inv_Type").text
+      puts "   --- #{type_name.upcase} ---"
+      item_list = type.xpath('Item')
+      if ['guns','melee'].include?(type_name)
+        item_list.each do |item|
+          group = item.xpath("Group")
+          group.each do |data|
+            puts "       #{data.xpath('name').text}, #{data.xpath("value").text}"
+          end
+        end
+      elsif ['equipment','ammo'].include?(type_name)
+        item_list.each do |item|
+          puts "       #{item.xpath('value').text}"
+        end
+      end
+    end
+
+    puts "\n--- NOTES ---"
+    character_notes_list = @character.xpath("Notes")
+    character_note = character_notes_list.xpath("Note")
+    character_note.each do |note|
+      list = Array.new
+      name = note.at_xpath('name').text.to_sym
+      puts "   --- #{name.upcase} ---"
+      note_list = note.xpath("List/contents")
+      note_list.each do |content|
+        puts "       #{content.text}"
+        list.append(content.text)
+      end
+      @notes[name.to_sym] = list
+    end
+
     @character = ''
     return @character_name
   end
