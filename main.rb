@@ -207,11 +207,12 @@ class Character
     trait_list = character_trait.xpath("Trait")
     trait_list.each do |trait|
       trait_name = trait.at_xpath('name').text
+      puts "   --- #{trait_name.upcase} ---"
       die_size = trait.at_xpath('die_size').text.to_i
       num_of_dice = trait.at_xpath('num_of_dice').text.to_i
       atb_list = []
       trait.xpath('Attribute').each do |atb|
-        puts "#{atb.at_xpath('name').text}, #{atb.at_xpath('value').text}"
+        puts "       #{atb.at_xpath('name').text}, #{atb.at_xpath('value').text}"
         atb_list << [atb.at_xpath('name').text, atb.at_xpath('value').text.to_i]
       end
       @traits[trait_name.to_sym] = Trait.new(num_of_dice, die_size, atb_list)
@@ -221,7 +222,7 @@ class Character
     character_wounds = @character.at_xpath("Wounds")
     wound_list = character_wounds.xpath("Wound")
     wound_list.each do |wound|
-      puts "#{wound.at_xpath('name').text}, #{wound.at_xpath('value').text}"
+      puts "    #{wound.at_xpath('name').text}, #{wound.at_xpath('value').text}"
       location = wound.at_xpath('name').text
       val = wound.at_xpath('value').text.to_i
       @wounds[location.to_sym] = val
@@ -231,7 +232,7 @@ class Character
     character_stats = @character.xpath("Stats")
     stat_list = character_stats.xpath("Stat")
     stat_list.each do |stat|
-      puts "#{stat.at_xpath('name').text}, #{stat.at_xpath('value').text}"
+      puts "    #{stat.at_xpath('name').text}, #{stat.at_xpath('value').text}"
       name = stat.at_xpath('name').text
       val = stat.at_xpath('value').text.to_i
       @stats[name.to_sym] = val
@@ -241,7 +242,7 @@ class Character
     character_chips = @character.xpath("Chips")
     chip_list = character_chips.xpath("Chip")
     chip_list.each do |chip|
-      puts "#{chip.at_xpath('name').text}, #{chip.at_xpath('value').text}"
+      puts "    #{chip.at_xpath('name').text}, #{chip.at_xpath('value').text}"
       name = chip.at_xpath('name').text
       val = chip.at_xpath('value').text.to_i
       @chips[name.to_sym] = val
@@ -278,6 +279,7 @@ class Character
 
 
     puts "\n--- INVENTORY ---"
+    @inventory = {:guns => [], :melee => [], :ammo => [], :equipment => []}
     character_inventory = @character.xpath("Inventory")
     character_inv_type = character_inventory.xpath("Inv")
     character_inv_type.each do |type|
@@ -286,15 +288,25 @@ class Character
       item_list = type.xpath('Item')
       if ['guns','melee'].include?(type_name)
         item_list.each do |item|
+          lst = Hash.new
           group = item.xpath("Group")
           group.each do |data|
-            puts "       #{data.xpath('name').text}, #{data.xpath("value").text}"
+            name = data.at_xpath('name').text
+            value = data.at_xpath('value').text
+            puts "       #{name}, #{value}"
+            lst[name.to_sym] = value
           end
+          puts "#{lst}"
+          @inventory[type_name.to_sym].append(lst)
         end
       elsif ['equipment','ammo'].include?(type_name)
-        item_list.each do |item|
-          puts "       #{item.xpath('value').text}"
-        end
+        lst = Array.new
+          values = item_list.xpath('value')
+          values.each do |value|
+            puts "       #{value.text}"
+            lst.append(value.text)
+          end
+          @inventory[type_name.to_sym] = lst
       end
     end
 
