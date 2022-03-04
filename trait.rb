@@ -12,12 +12,16 @@ class Trait
     end
   end
   
-  def edit_attribute
+  def edit_attribute_interactive
     puts "select which value?"
     @attributes.each{|atb, value| puts "#{atb}" }
     atb = gets.chomp
     puts "current atribute value is #{@attributes[atb]}, replace with what value?"
     value = gets.chomp.to_i
+    @attributes[atb] = value
+  end
+
+  def edit_attribute(atb, value)
     @attributes[atb] = value
   end
   

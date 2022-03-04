@@ -11,49 +11,39 @@ class Character
     
     # trait set up
     @traits = {}
-    @traits[:cognition]  = Trait.new(0,0, ['atrillery', 'arts', 'scrutinize', ['search', 1], 'trackin','blank'])
-    @traits[:deftness]   = Trait.new(0,0, ['bow', 'filchin', 'lockpickin', 'shootin','shoot-type', 'sleight o hand',
-                                           'speed load', 'throwin', 'throw-type', 'blank'])
+    @traits[:cognition]  = Trait.new(0,0, ['artillery', 'arts', 'scrutinize', ['search', 1],
+                                           'trackin', 'blank'])
+    @traits[:deftness]   = Trait.new(0,0, ['bow', 'filchin', 'lockpickin', 'shootin','shoot-type',
+                                           'sleight o hand', 'speed load', 'throwin', 'throw-type', 'blank'])
     
-    @traits[:knowledge]  = Trait.new(0,0, ['academia', 'aca-topic1', 'aca-topic2', 'area knowledge', 'area1', 'demolition',
-                                           'disguise', 'language', 'lang-1', 'lang-2', 'mad science', 'medicin', 'med-type',
-                                           'professional', 'pro-1', 'pro-2', 'science', 'sci-1', 'sci-2', 'trade', 'trade-1',
-                                           'trade-2', 'blank-1', 'blank-2'])
+    @traits[:knowledge]  = Trait.new(0,0, ['academia', 'aca-topic1', 'aca-topic2', 'area knowledge',
+                                           'area1', 'demolition', 'disguise', 'language', 'lang-1', 'lang-2',
+                                           'mad science', 'medicin', 'med-type', 'professional', 'pro-1', 'pro-2',
+                                           'science', 'sci-1', 'sci-2', 'trade', 'trade-1', 'trade-2', 'blank-1',
+                                           'blank-2'])
     
-    @traits[:mien]       = Trait.new(0,0, ['animal wranglin', 'animal-1', 'leadership', 'overawe', 'performin', 'perf-1',
-                                           'persuasion', 'tale tellin', 'blank-1', 'blank-2'])
+    @traits[:mien]       = Trait.new(0,0, ['animal wranglin', 'animal-1', 'leadership', 'overawe',
+                                           'performin', 'perf-1', 'persuasion', 'tale tellin', 'blank-1', 'blank-2'])
     
-    @traits[:nimbleness] = Trait.new(0,0, [['climbin', 1], 'dodge', 'drivin', 'fightin', 'fight-1', 'fight-2', 'horse ridin',
-                                           ['sneak', 1], 'swimmin', 'teamster', 'team-1'])
+    @traits[:nimbleness] = Trait.new(0,0, [['climbin', 1], 'dodge', 'drivin', 'fightin',
+                                           'fight-1', 'fight-2', 'horse ridin', ['sneak', 1], 'swimmin', 'teamster',
+                                           'team-1'])
     
     @traits[:quickness]  = Trait.new(0,0, ['quick draw', 'quick-1', 'blank'])
-    @traits[:smarts]     = Trait.new(0,0, ['bluff', 'gamblin', 'ridicule', 'scroungin', 'streetwise', 'survival', 'surv-1',
-                                           'tinkerin', 'blank-1', 'blank-2'])
+    @traits[:smarts]     = Trait.new(0, 0, %w[bluff gamblin ridicule scroungin streetwise survival surv-1 tinkerin blank-1 blank-2])
     
-    @traits[:spirit]     = Trait.new(0,0, ['faith', 'guts', 'blank-1', 'blank-2'])
+    @traits[:spirit]     = Trait.new(0, 0, %w[faith guts blank-1 blank-2])
     @traits[:stength]    = Trait.new(0,0, ['blank'])
     @traits[:vigor]      = Trait.new(0,0, ['blank'])
     
     #setting up wound tracking
-    @wounds = {}
-    @wounds[:head]   = 0
-    @wounds[:rt_arm] = 0
-    @wounds[:lt_arm] = 0
-    @wounds[:guts]   = 0
-    @wounds[:rt_leg] = 0
-    @wounds[:lt_leg] = 0
+    @wounds = {:head => 0, :rt_arm => 0, :lt_arm => 0, :guts => 0, :rt_leg => 0, :lt_leg => 0}
 
     #stats
-    @stats = {}
-    @stats[:pace] = 0
-    @stats[:size] = 0
-    @stats[:wind] = 0
-    @stats[:grit] = 0
+    @stats = {:pace => 0, :size => 0, :wind => 0, :grit => 0}
 
-    @chips = {}
-    @chips[:white_chip] = 0
-    @chips[:red_chip]   = 0
-    @chips[:blue_chip]  = 0
+
+    @chips = {:white_chip => 0,:red_chip => 0, :blue_chip => 0}
 
     #arcane
     @arcane_stats = {:hexslingin => "", :ritual => "", :rituals => ""} 
@@ -61,20 +51,16 @@ class Character
     # list of arcane hashes {:Power => "", :Speed => "", :Duration => "", :Range => "", :Trait => "", :TN => "", :Notes => ""}
 
     #inventory
-    @inventory = {}
-    @inventory[:guns]      = [{}]
+    @inventory = {:guns => [{}],
+                  :melee => [{:Weapon => "Fist", :Defense => '--', :Speed => 1, :Damage => ""}],
+                  :ammo => [0,0,0],
+                  :equipment => []}
+
     # list of gun hashes {:Weapon => "", :Shots => , :RoF => '', :Range => '', :Damage => ""}
-    @inventory[:melee]     = [{:Weapon => "Fist", :Defense => '--', :Speed => 1, :Damage => ""}]
     # list of melee weapon hashes{:Weapon => "", :Defense => '', :Speed => , :Damage => ""}
-    @inventory[:ammo]      = [0,0,0]
-    @inventory[:equipment] = [] # list of equipment
 
     #character notes
-    @notes = {}
-    @notes[:notes]      = []
-    @notes[:nightmare]  = []
-    @notes[:edges]      = []
-    @notes[:hindrences] = []
+    @notes = {:notes => [], :nightmare => [], :edges => [], :hindrences => []}
   end
   
   def save_character
@@ -296,7 +282,6 @@ class Character
             puts "       #{name}, #{value}"
             lst[name.to_sym] = value
           end
-          puts "#{lst}"
           @inventory[type_name.to_sym].append(lst)
         end
       elsif ['equipment','ammo'].include?(type_name)
